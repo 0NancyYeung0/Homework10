@@ -1,0 +1,127 @@
+---
+title: "Homework 10"
+author: "Nancy Yeung (ny3257) - SDS 315 - [GitHub Repository](https://github.com/0NancyYeung0/Homework10.git)"
+output: pdf_document
+---
+\vspace{-1cm}
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=8, warning=FALSE, message=FALSE, echo=FALSE)
+```
+
+```{r}
+library(ggplot2)
+library(RColorBrewer)
+library(dplyr)
+library(kableExtra)
+library(knitr)
+library(tidyverse)
+library(mosaic)
+library(MatchIt)
+library(moderndive)
+library(effectsize)
+Redlining <- read.csv("redlining.csv")
+Groceries <- read.csv("groceries.csv")
+```
+------------------------------------------------------------------------
+\begingroup
+\fontsize{12}{14}\selectfont
+**Problem 1: Redlining**
+\endgroup
+
+```{r}
+RedliningModel = lm(policies ~ minority + fire + age + income, data=Redlining)
+
+kable(get_regression_table(RedliningModel), caption = "Redlining Regression
+Table", align = "c", booktabs = T) %>% 
+  kable_styling(latex_options = c("striped", "hold_position"))
+      
+ggplot(RedliningModel) + geom_histogram(aes(x = policies), color = "white", fill = "skyblue") + labs(title = "Distribution of Policies", x = "Policies", y = "Count") + theme_minimal() + theme(text = element_text(size = 13, family = "serif"))
+```
+
+Using the table and graph above we are trying to see if there is an association between the number
+of FAIR policies and the racial/ethic composition of a ZIP code, adjusting for the fire, age, and
+income variables. A linear regression model was used and as seen from the table and graph above, there is an association between the racial/ethnic composition of a ZIP code and number of FAIR policies. When there is a 1% change in minority, the number of FAIR policies per 100 residents increases by 0.008 with a 95% confidence interval of 0.003 to 0.014. This isn't a significant change, but it's also not a small change. For instance, if there was a 50% change in minority instead of 1%, the number of FAIR policies per 100 residents would increase by 0.4. This 0.4 increase is 1/5 of the number of policies.
+
+\newpage
+
+\begingroup
+\fontsize{12}{14}\selectfont
+**Problem 2: Grocery store prices**
+\endgroup
+
+\begingroup
+\fontsize{10}{12}\selectfont
+**Part A:**
+\endgroup
+
+```{r}
+GroceriesA <- Groceries %>%
+  group_by(Store) %>%
+  summarize(AvgPrice = mean(Price))
+
+ggplot(GroceriesA) + geom_bar(aes(x = Store, y = AvgPrice), stat = "identity", color = "white", fill = "skyblue") + labs(title = "Average Price of Products Across Different Stores", x = "Store", y = "Average Price ($)") + coord_flip() + theme_minimal() + theme(text = element_text(size = 13, family = "serif"))
+```
+
+The graph above shows the average price of products at different stores, with Whole Foods and Wheatsville Food Co-Op having the highest average prices.
+
+\begingroup
+\fontsize{10}{12}\selectfont
+**Part B:**
+\endgroup
+
+```{r}
+GroceriesB <- Groceries %>%
+  group_by(Product) %>%
+  summarize(NumOfStores = n())
+
+ggplot(GroceriesB) + geom_bar(aes(x = NumOfStores, y = Product), stat = "identity", color = "white", fill =
+"skyblue") + labs(title = "Number of Stores Selling a Product", x = "Number of Stores", У = "Product") + theme_minimal() + theme(text = element_text(size = 7, family = "serif"))
+```
+
+The graph above shows different products and the number of stores that sell that product, with eggs and milk being sold at all schools.
+
+\begingroup
+\fontsize{10}{12}\selectfont
+**Part C:**
+\endgroup
+
+```{r}
+GroceriesModel = lm(Price ~ Product + Type, data=Groceries)
+GroceriesLMTable <- get_regression_table(GroceriesModel)
+```
+
+Compared with ordinary grocery stores (like Albertsons, HEB, or Krogers), convenience stores charge somewhere between **0.41** and **0.92** dollars more for the same product.
+
+\begingroup
+\fontsize{10}{12}\selectfont
+**Part D:**
+\endgroup
+
+```{r}
+GroceriesModel2 = lm(Price ~ Product + Store, data=Groceries)
+CoefD <- coef(GroceriesModel2)
+```
+
+When comparing the same product (12 Pack Coke), the two stores that seem to charge the lowest prices are **Walmart**, -0.993, and **Kroger Fresh Fare**, -0.902. When comparing that same product, the two stores that seem to charge the highest prices are **Whole Foods**, 0.364, and **Wheatsville Food Co-op**, 0.290.
+
+\begingroup
+\fontsize{10}{12}\selectfont
+**Part E:**
+\endgroup
+
+Central Market and HEB charges similar prices for the same product. When comparing their prices, the difference is only **$0.0726**, which is relatively small. In contrast, the price difference between Central Market and Whole Foods is about **$0.9375**, which is significantly larger. In this context, Central Market and HEB seem to charge similar prices for the same product.
+
+\begingroup
+\fontsize{10}{12}\selectfont
+**Part F:**
+\endgroup
+
+```{r}
+Groceries <- mutate(Groceries, Income10K = Income%/%10000)
+GroceriesModel3 = lm(Price ~ Product + Income10K, data = Groceries)
+CoefF <- coef(GroceriesModel3)
+PartF <- standardize_parameters(GroceriesModel3)
+```
+
+The coefficient of Income10K is **-0.0131** The negative coefficient suggests that as income increases by $10,000, the price for groceries decreases by **$0.0131**. In poorer ZIP codes, consumers are likely to pay more for the same product compared to those in richer ZIP codes. As income decreases, the price subtracted from the price gets smaller, which leads to higher prices. A one-standard deviation increase in the income of a ZIP code seems to be associated with a **-0.03** standard-deviation change in the price that consumers in that ZIP code expect to pay for the same product.
